@@ -1,12 +1,18 @@
 import airtable, { FieldSet, Record, Table } from 'airtable';
+import { Attachment } from 'airtable/lib/attachment';
 import { QueryParams } from 'airtable/lib/query_params';
 import config from '../config';
 
 const view = 'web';
 
-type Map<T> = (record: AirtableRecord) => T;
+type Map<T> = (record: AirtableRecord) => Promise<T>;
 
 export type AirtableRecord = Record<FieldSet>;
+
+export interface AirtableImageAttachment extends Attachment {
+  height: number;
+  width: number;
+}
 
 export enum ERRORS {
   INTERNAL_ERROR = 'INTERNAL_ERROR',
@@ -22,21 +28,21 @@ class Airtable<T> {
     this.map = map;
   }
 
-  get = async (id: string): Promise<T> => {
+  find = async (id: string): Promise<T> => {
     const params: QueryParams<FieldSet> = {
       filterByFormula: `id = '${id}'`,
       view,
     };
 
     return new Promise((resolve, reject) => {
-      this.base.select(params).firstPage((error, records) => {
+      this.base.select(params).firstPage(async (error, records) => {
         if (error) {
           console.error('[Airtable - get] Error', error);
           reject(ERRORS.INTERNAL_ERROR);
         }
 
         if (records && records.length) {
-          resolve(this.map(records[0]));
+          resolve(await this.map(records[0]));
         } else {
           reject(ERRORS.NOT_FOUND);
         }
@@ -44,13 +50,21 @@ class Airtable<T> {
     });
   };
 
-  selectAll = async (): Promise<T[]> =>
-    new Promise((resolve, reject) => {
+  findByField = async (field?: string, value?: string): Promise<T[]> => {
+    const params: QueryParams<FieldSet> = {
+      ...(field && value && { filterByFormula: `${field} = '${value}'` }),
+      view,
+    };
+
+    return new Promise((resolve, reject) => {
       let items: T[] = [];
 
-      this.base.select({ view }).eachPage(
-        (records, fetchNextPage) => {
-          items = [...items, ...records.map(record => this.map(record))];
+      this.base.select(params).eachPage(
+        async (records, fetchNextPage) => {
+          const newItems = await Promise.all(
+            records.map(record => this.map(record)),
+          );
+          items = [...items, ...newItems];
           fetchNextPage();
         },
         error => {
@@ -62,6 +76,9 @@ class Airtable<T> {
         },
       );
     });
+  };
+
+  selectAll = async (): Promise<T[]> => this.findByField();
 }
 
 export default Airtable;

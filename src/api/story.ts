@@ -1,22 +1,70 @@
+import { API } from '.';
 import Airtable, { AirtableRecord } from './airtable';
+
+import photoApi, { Photo } from './photo';
 
 const TABLE = 'story';
 
-export interface Story {
-  id: string;
+type Lang = 'en' | 'es';
+
+interface StoryInfo {
+  description: string;
   name: string;
 }
 
-const map = (record: AirtableRecord): Story => ({
-  id: record.get('id') as string,
-  name: record.get('name') as string,
-});
+export interface Story {
+  en: StoryInfo;
+  es: StoryInfo;
+  id: string;
+  order: number;
+  photos: Photo[];
+}
+
+const mapInfo = (record: AirtableRecord): Pick<Story, 'en' | 'es'> => {
+  return {
+    en: {
+      description: record.get('description_en') as string,
+      name: record.get('name_en') as string,
+    },
+    es: {
+      description: record.get('description_es') as string,
+      name: record.get('name_es') as string,
+    },
+  };
+};
+
+const map = async (record: AirtableRecord): Promise<Story> => {
+  const id = record.get('id') as string;
+  const { photos } = await getLinkedRecords(id);
+  const { en, es } = mapInfo(record);
+
+  return Promise.resolve({
+    en,
+    es,
+    id,
+    order: record.get('order') as number,
+    photos,
+  });
+};
+
+interface Linked {
+  photos: Story['photos'];
+}
+
+const getLinkedRecords = async (storyId: Story['id']): Promise<Linked> => {
+  const photos = await photoApi.findByStoryId(storyId);
+
+  return {
+    photos: photos.sort((a, b) => a.order - b.order),
+  };
+};
 
 const airtable = new Airtable<Story>(map, TABLE);
 
-const api = {
-  get: async (id: string): Promise<Story> => await airtable.get(id),
-  list: async (): Promise<Story[]> => await airtable.selectAll(),
+const api: API<Story> = {
+  find: async (id: string): Promise<Story> => await airtable.find(id),
+  list: async (): Promise<Story[]> =>
+    (await airtable.selectAll()).sort((a, b) => a.order - b.order),
 };
 
 export default api;
