@@ -1,10 +1,11 @@
 import express from 'express';
 import cors from 'cors';
+import config from './config';
 import stories from './routes/story';
 import texts from './routes/texts';
 
 const app = express();
-const port = 3000;
+const port = config.port;
 
 app.use(cors());
 

@@ -7,6 +7,8 @@ interface Config {
     apiKey: string;
     base: string;
   };
+  env: string;
+  port: number;
 }
 
 const config: Config = {
@@ -14,6 +16,8 @@ const config: Config = {
     apiKey: process.env.AIRTABLE_API_KEY,
     base: process.env.AIRTABLE_BASE,
   },
+  env: process.env.ENV,
+  port: Number(process.env.PORT),
 };
 
 export default config;
