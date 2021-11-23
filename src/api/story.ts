@@ -8,7 +8,9 @@ const TABLE = 'story';
 type Lang = 'en' | 'es';
 
 interface StoryInfo {
+  country: string;
   description: string;
+  place: string;
   name: string;
 }
 
@@ -18,17 +20,22 @@ export interface Story {
   id: string;
   order: number;
   photos: Photo[];
+  year: number;
 }
 
 const mapInfo = (record: AirtableRecord): Pick<Story, 'en' | 'es'> => {
   return {
     en: {
+      country: record.get('country_en') as string,
       description: record.get('description_en') as string,
       name: record.get('name_en') as string,
+      place: record.get('place_en') as string,
     },
     es: {
+      country: record.get('country_es') as string,
       description: record.get('description_es') as string,
       name: record.get('name_es') as string,
+      place: record.get('place_es') as string,
     },
   };
 };
@@ -44,6 +51,7 @@ const map = async (record: AirtableRecord): Promise<Story> => {
     id,
     order: record.get('order') as number,
     photos,
+    year: record.get('year') as number,
   });
 };
 
