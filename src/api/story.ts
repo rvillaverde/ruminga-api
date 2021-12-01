@@ -10,16 +10,19 @@ type Lang = 'en' | 'es';
 interface StoryInfo {
   country: string;
   description: string;
-  place: string;
   name: string;
+  place: string;
 }
 
 export interface Story {
+  cardPosition: 'left' | 'right';
   en: StoryInfo;
   es: StoryInfo;
   id: string;
+  internalId: string;
   order: number;
   photos: Photo[];
+  show: boolean;
   year: number;
 }
 
@@ -49,9 +52,12 @@ const map = async (record: AirtableRecord): Promise<Story> => {
     en,
     es,
     id,
-    order: record.get('order') as number,
+    internalId: record.id,
+    order: record.get('order') as Story['order'],
     photos,
-    year: record.get('year') as number,
+    year: record.get('year') as Story['year'],
+    show: record.get('show') as Story['show'],
+    cardPosition: record.get('cardPosition') as Story['cardPosition'],
   });
 };
 
@@ -67,7 +73,7 @@ const getLinkedRecords = async (storyId: Story['id']): Promise<Linked> => {
   };
 };
 
-const airtable = new Airtable<Story>(map, TABLE);
+const airtable = new Airtable<Story>(TABLE, map);
 
 const api: API<Story> = {
   find: async (id: string): Promise<Story> => await airtable.find(id),

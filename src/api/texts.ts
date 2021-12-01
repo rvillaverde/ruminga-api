@@ -15,6 +15,7 @@ export interface Text {
   en: string;
   es: string;
   id: string;
+  internalId: string;
 }
 
 const map = async (record: AirtableRecord): Promise<Text> => {
@@ -22,10 +23,11 @@ const map = async (record: AirtableRecord): Promise<Text> => {
     en: record.get('en') as string,
     es: record.get('es') as string,
     id: record.get('id') as string,
+    internalId: record.id,
   });
 };
 
-const airtable = new Airtable<Text>(map, TABLE);
+const airtable = new Airtable<Text>(TABLE, map);
 
 const api: TextsAPI = {
   find: async (id: string): Promise<Text> => await airtable.find(id),

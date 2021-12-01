@@ -1,8 +1,7 @@
-export interface BaseRecord {
-  id: string;
-}
+import { BaseRecord } from './airtable';
 
 export interface API<T extends BaseRecord> {
-  list: () => Promise<T[]>;
+  create?: (record: Partial<T>) => Promise<T['id']>;
   find: (id: T['id']) => Promise<T>;
+  list: () => Promise<T[]>;
 }

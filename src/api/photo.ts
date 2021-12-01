@@ -1,4 +1,3 @@
-import { Attachment } from 'airtable/lib/attachment';
 import { API } from '.';
 import Airtable, { AirtableImageAttachment, AirtableRecord } from './airtable';
 import { Story } from './story';
@@ -12,6 +11,7 @@ interface PhotoAPI extends API<Photo> {
 export interface Photo {
   id: string;
   image: Image;
+  internalId: string;
   order: number;
 }
 
@@ -49,12 +49,13 @@ const map = (record: AirtableRecord): Promise<Photo> => {
 
   return Promise.resolve({
     id: record.get('id') as string,
+    internalId: record.id,
     image: mapImage(image),
     order: record.get('order') as number,
   });
 };
 
-const airtable = new Airtable<Photo>(map, TABLE);
+const airtable = new Airtable<Photo>(TABLE, map);
 
 const api: PhotoAPI = {
   find: async (id: string): Promise<Photo> => await airtable.find(id),

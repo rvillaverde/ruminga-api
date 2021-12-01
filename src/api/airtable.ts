@@ -6,6 +6,10 @@ import config from '../config';
 const view = 'web';
 
 type Map<T> = (record: AirtableRecord) => Promise<T>;
+export interface BaseRecord {
+  id: string | number;
+  internalId: string;
+}
 
 export type AirtableRecord = Record<FieldSet>;
 
@@ -14,21 +18,64 @@ export interface AirtableImageAttachment extends Attachment {
   width: number;
 }
 
+type AirtableField = boolean | number | string | undefined | string[];
+
+export interface AirtableCreateRecord<T> {
+  fields: {
+    [key: string]: AirtableField;
+  };
+}
+
 export enum ERRORS {
   INTERNAL_ERROR = 'INTERNAL_ERROR',
   NOT_FOUND = 'NOT_FOUND',
 }
 
-class Airtable<T> {
+class Airtable<T extends BaseRecord> {
   private base: Table<FieldSet>;
   private map: Map<T>;
+  // @TODO: Review argument type
+  private toRecord?: (item: {
+    [key: string]: AirtableField;
+  }) => AirtableCreateRecord<T>;
 
-  constructor(map: Map<T>, table: string) {
+  constructor(
+    table: string,
+    map: Map<T>,
+    toRecord?: (item: {
+      [key: string]: AirtableField;
+    }) => AirtableCreateRecord<T>,
+  ) {
     this.base = airtable.base(config.airtable.base)(table);
     this.map = map;
+    this.toRecord = toRecord;
   }
 
-  find = async (id: string): Promise<T> => {
+  create = async (
+    item: Partial<T> & { [key: string]: AirtableField },
+  ): Promise<T['id']> => {
+    if (!this.toRecord) {
+      return Promise.reject('[Airtable - create] toRecord undefined');
+    }
+
+    const records: AirtableCreateRecord<T>[] = [this.toRecord(item)];
+
+    return new Promise((resolve, reject) => {
+      this.base.create(records, (error, records) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+          return;
+        }
+
+        const id: T['id'] = records[0].get('id') as T['id'];
+
+        resolve(id);
+      });
+    });
+  };
+
+  find = async (id: string | number): Promise<T> => {
     const params: QueryParams<FieldSet> = {
       filterByFormula: `id = '${id}'`,
       view,
