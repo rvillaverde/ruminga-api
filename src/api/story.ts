@@ -26,22 +26,20 @@ export interface Story {
   year: number;
 }
 
-const mapInfo = (record: AirtableRecord): Pick<Story, 'en' | 'es'> => {
-  return {
-    en: {
-      country: record.get('country_en') as string,
-      description: record.get('description_en') as string,
-      name: record.get('name_en') as string,
-      place: record.get('place_en') as string,
-    },
-    es: {
-      country: record.get('country_es') as string,
-      description: record.get('description_es') as string,
-      name: record.get('name_es') as string,
-      place: record.get('place_es') as string,
-    },
-  };
-};
+const mapInfo = (record: AirtableRecord): Pick<Story, 'en' | 'es'> => ({
+  en: {
+    country: record.get('country_en') as string,
+    description: record.get('description_en') as string,
+    name: record.get('name_en') as string,
+    place: record.get('place_en') as string,
+  },
+  es: {
+    country: record.get('country_es') as string,
+    description: record.get('description_es') as string,
+    name: record.get('name_es') as string,
+    place: record.get('place_es') as string,
+  },
+});
 
 const map = async (record: AirtableRecord): Promise<Story> => {
   const id = record.get('id') as string;
@@ -76,9 +74,9 @@ const getLinkedRecords = async (storyId: Story['id']): Promise<Linked> => {
 const airtable = new Airtable<Story>(TABLE, map);
 
 const api: API<Story> = {
-  find: async (id: string): Promise<Story> => await airtable.find(id),
+  find: async (id: string): Promise<Story> => airtable.find(id),
   list: async (): Promise<Story[]> =>
-    (await airtable.selectAll()).sort((a, b) => a.order - b.order),
+    (await airtable.findByField('show', '1')).sort((a, b) => a.order - b.order),
 };
 
 export default api;
