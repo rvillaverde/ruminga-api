@@ -15,6 +15,7 @@ interface StoryInfo {
 }
 
 export interface Story {
+  background: 'black' | 'white';
   cardPosition: 'left' | 'right';
   en: StoryInfo;
   es: StoryInfo;
@@ -47,6 +48,7 @@ const map = async (record: AirtableRecord): Promise<Story> => {
   const { en, es } = mapInfo(record);
 
   return Promise.resolve({
+    background: (record.get('background') as Story['background']) || 'white',
     en,
     es,
     id,
