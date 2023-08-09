@@ -16,6 +16,7 @@ export interface Photo {
 }
 
 export interface Image {
+  height: number;
   orientation: 'horizontal' | 'square' | 'vertical';
   thumbnails: {
     full: string;
@@ -23,12 +24,14 @@ export interface Image {
     small: string;
   };
   url: string;
+  width: number;
 }
 
 const mapImage = (image: AirtableImageAttachment): Image => {
   const { thumbnails } = image;
 
   return {
+    height: image.height,
     orientation:
       image.height === image.width
         ? 'square'
@@ -41,6 +44,7 @@ const mapImage = (image: AirtableImageAttachment): Image => {
       small: thumbnails.small.url,
     },
     url: image.url,
+    width: image.width
   };
 };
 
