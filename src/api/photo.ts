@@ -9,6 +9,7 @@ interface PhotoAPI extends API<Photo> {
 }
 
 export interface Photo {
+  background: string;
   id: string;
   image: Image;
   internalId: string;
@@ -52,6 +53,7 @@ const map = (record: AirtableRecord): Promise<Photo> => {
   const image = record.get('image')[0] as AirtableImageAttachment;
 
   return Promise.resolve({
+    background: record.get('background') as string,
     id: record.get('id') as string,
     internalId: record.id,
     image: mapImage(image),
