@@ -7,6 +7,7 @@ interface Config {
     apiKey: string;
     base: string;
   };
+  baseUrl: string;
   env: string;
   port: number;
 }
@@ -16,6 +17,7 @@ const config: Config = {
     apiKey: process.env.AIRTABLE_API_KEY,
     base: process.env.AIRTABLE_BASE,
   },
+  baseUrl: process.env.BASE_URL,
   env: process.env.ENV,
   port: Number(process.env.PORT),
 };

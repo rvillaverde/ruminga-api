@@ -1,4 +1,5 @@
 import { API } from '.';
+import config from '../config';
 import Airtable, { AirtableImageAttachment, AirtableRecord } from './airtable';
 import { Story } from './story';
 
@@ -19,6 +20,7 @@ export interface Photo {
 export interface Image {
   height: number;
   orientation: 'horizontal' | 'square' | 'vertical';
+  originalUrl: string;
   thumbnails: {
     full: string;
     large: string;
@@ -28,7 +30,7 @@ export interface Image {
   width: number;
 }
 
-const mapImage = (image: AirtableImageAttachment): Image => {
+const mapImage = (id: Photo['id'], image: AirtableImageAttachment): Image => {
   const { thumbnails } = image;
 
   return {
@@ -39,24 +41,27 @@ const mapImage = (image: AirtableImageAttachment): Image => {
         : image.height > image.width
         ? 'vertical'
         : 'horizontal',
+    originalUrl: image.url,
     thumbnails: {
       full: thumbnails.full.url,
       large: thumbnails.large.url,
       small: thumbnails.small.url,
     },
-    url: image.url,
-    width: image.width
+    url: `${config.baseUrl}/photos/${id}/image`,
+    width: image.width,
   };
 };
 
 const map = (record: AirtableRecord): Promise<Photo> => {
   const image = record.get('image')[0] as AirtableImageAttachment;
 
+  const id = record.get('id') as string;
+
   return Promise.resolve({
     background: record.get('background') as string,
-    id: record.get('id') as string,
+    id,
     internalId: record.id,
-    image: mapImage(image),
+    image: mapImage(id, image),
     order: record.get('order') as number,
   });
 };
