@@ -1,5 +1,4 @@
 import { API } from '.';
-import config from '../config';
 import Airtable, { AirtableImageAttachment, AirtableRecord } from './airtable';
 import { Story } from './story';
 
@@ -20,37 +19,21 @@ export interface Photo {
 export interface Image {
   height: number;
   orientation: 'horizontal' | 'square' | 'vertical';
-  originalUrl: string;
-  thumbnails: {
-    full: string;
-    large: string;
-    small: string;
-  };
   url: string;
   width: number;
 }
 
-const mapImage = (id: Photo['id'], image: AirtableImageAttachment): Image => {
-  const { thumbnails } = image;
-
-  return {
-    height: image.height,
-    orientation:
-      image.height === image.width
-        ? 'square'
-        : image.height > image.width
-        ? 'vertical'
-        : 'horizontal',
-    originalUrl: image.url,
-    thumbnails: {
-      full: thumbnails.full.url,
-      large: thumbnails.large.url,
-      small: thumbnails.small.url,
-    },
-    url: `${config.baseUrl}/photos/${id}/image`,
-    width: image.width,
-  };
-};
+const mapImage = (image: AirtableImageAttachment): Image => ({
+  height: image.height,
+  orientation:
+    image.height === image.width
+      ? 'square'
+      : image.height > image.width
+      ? 'vertical'
+      : 'horizontal',
+  url: image.url,
+  width: image.width,
+});
 
 const map = (record: AirtableRecord): Promise<Photo> => {
   const image = record.get('image')[0] as AirtableImageAttachment;
@@ -61,7 +44,7 @@ const map = (record: AirtableRecord): Promise<Photo> => {
     background: record.get('background') as string,
     id,
     internalId: record.id,
-    image: mapImage(id, image),
+    image: mapImage(image),
     order: record.get('order') as number,
   });
 };

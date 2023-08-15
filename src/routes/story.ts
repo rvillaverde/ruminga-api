@@ -1,4 +1,5 @@
 import express from 'express';
+import photoApi from '../api/photo';
 import storyApi from '../api/story';
 
 const router = express.Router();
@@ -6,7 +7,6 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   const stories = await storyApi.list();
 
-  res.setHeader('Content-Type', 'application/json');
   res.json(stories);
 });
 
@@ -15,10 +15,21 @@ router.get('/:id', async (req, res) => {
     const id = req.params.id;
     const story = await storyApi.find(id);
 
-    res.setHeader('Content-Type', 'application/json');
     res.json(story);
   } catch (error) {
-    res.status(404);
+    res.status(500);
+    res.send({ error });
+  }
+});
+
+router.get('/:id/photos', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const photos = await photoApi.findByStoryId(id);
+
+    res.json(photos);
+  } catch (error) {
+    res.status(500);
     res.send({ error });
   }
 });

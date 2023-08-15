@@ -1,11 +1,9 @@
 import { API } from '.';
+import config from '../config';
 import Airtable, { AirtableRecord } from './airtable';
-
 import photoApi, { Photo } from './photo';
 
 const TABLE = 'story';
-
-type Lang = 'en' | 'es';
 
 interface StoryInfo {
   country: string;
@@ -22,8 +20,12 @@ export interface Story {
   id: string;
   internalId: string;
   order: number;
-  photos: Photo[];
   show: boolean;
+  thumbnail: {
+    height: number;
+    url: string;
+    width: number;
+  };
   year: number;
 }
 
@@ -44,32 +46,31 @@ const mapInfo = (record: AirtableRecord): Pick<Story, 'en' | 'es'> => ({
 
 const map = async (record: AirtableRecord): Promise<Story> => {
   const id = record.get('id') as string;
-  const { photos } = await getLinkedRecords(id);
   const { en, es } = mapInfo(record);
 
   return Promise.resolve({
     background: (record.get('background') as Story['background']) || 'white',
+    cardPosition: record.get('cardPosition') as Story['cardPosition'],
     en,
     es,
     id,
     internalId: record.id,
     order: record.get('order') as Story['order'],
-    photos,
-    year: record.get('year') as Story['year'],
     show: record.get('show') as Story['show'],
-    cardPosition: record.get('cardPosition') as Story['cardPosition'],
+    thumbnail: await getThumbnail(record.get('thumbnail_id') as string),
+    year: record.get('year') as Story['year'],
   });
 };
 
-interface Linked {
-  photos: Story['photos'];
-}
-
-const getLinkedRecords = async (storyId: Story['id']): Promise<Linked> => {
-  const photos = await photoApi.findByStoryId(storyId);
+const getThumbnail = async (id: Photo['id']): Promise<Story['thumbnail']> => {
+  const {
+    image: { height, width },
+  } = await photoApi.find(id);
 
   return {
-    photos: photos.sort((a, b) => a.order - b.order),
+    height,
+    url: `${config.baseUrl}/photos/${id}/image`,
+    width,
   };
 };
 
